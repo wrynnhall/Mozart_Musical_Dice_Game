@@ -26,11 +26,13 @@ func main() {
 	measures := getMeasures()
 	variantTable := getVariantTable()
 	musicalDiceGame := [16]Measure{}
+	// populate dice game with a random measure, gotten by choosing a random value from the variant table
 	for i := range musicalDiceGame {
 		diceRoll := diceRoll()
 		measureSelect := variantTable[i][diceRoll]
 		musicalDiceGame[i] = measures[measureSelect-1]
 	}
+
 	for i, m := range musicalDiceGame {
 		for j, nb := range m.NoteBeat {
 
@@ -100,7 +102,6 @@ func getVariantTable() [][]int {
 
 func getNoteBeats() []NoteBeat {
 	noteBeats := []NoteBeat{}
-
 	file, err := os.Open("mozart-dice-starting.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -109,9 +110,7 @@ func getNoteBeats() []NoteBeat {
 	scanner.Split(bufio.ScanLines)
 	eof := false
 	for eof != true {
-
 		success := scanner.Scan()
-
 		if success == false {
 			err = scanner.Err()
 			if err == nil {
@@ -129,14 +128,12 @@ func getNoteBeats() []NoteBeat {
 			noteBeat := NoteBeat{Note: note, Beat: beat, BeatLength: beatLength}
 			noteBeats = append(noteBeats, noteBeat)
 		}
-
 	}
 	return noteBeats
 }
 
 func getMeasures() []Measure {
 	measures := []Measure{}
-
 	measureNum := 1
 	nbs := getNoteBeats()
 	measure := Measure{MeasureNumber: measureNum, NoteBeat: []NoteBeat{}}
@@ -152,8 +149,6 @@ func getMeasures() []Measure {
 		} else {
 			measure.NoteBeat = append(measure.NoteBeat, nb)
 		}
-
 	}
-
 	return measures
 }

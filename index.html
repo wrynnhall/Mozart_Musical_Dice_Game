@@ -1,0 +1,117 @@
+<!--File courtesy of /u/Cosmologicon of Reddit-->
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mozart dice: solution player</title>
+<style>
+</style>
+<body>
+<h1>Mozart Musical Dice Game</h1>
+<p>HTML5 AudioContext support required.
+<p>Run Code and Paste composition below:
+<p>
+<textarea id=compo style="width: 10em; height: 10em" onchange="updateurl()" placeholder="Paste composition here"></textarea>
+<p><button onclick="play()">Play</button><button onclick="stop()">Stop</button>
+<p><input id=current disabled></input>
+<script>
+"use strict"
+window.onerror = function (error, url, line) {
+	document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>"
+}
+let notenames = {}
+;"C C# D D# E F F# G G# A A# B".split(" ").forEach((n, j) => {
+	for (let octave = -1 ; octave < 8 ; ++octave) {
+		notenames[n + octave] = 12 + 12 * octave + j
+	}
+})
+function totext(compo) {
+	let values = compo.replace(/,/g, " ").match(/\S+/g) || []
+	let ret = []
+	for (let j = 0 ; j < values.length ; j += 3) {
+		ret.push(values.slice(j, j + 3).join(" "))
+	}
+	return ret.join("\n")
+}
+function toquery(compo) {
+	let values = compo.replace(/,/g, " ").match(/\S+/g) || []
+	return values.join(",")
+}
+function updateurl() {
+	let compo = document.getElementById("compo").value
+//	history.replaceState(null, "", "?s=" + toquery(compo))
+}
+
+window.AudioContext = window.AudioContext || window.webkitAudioContext
+let tempo = 120
+let wavetype = "square"
+let tsnum = 3
+let context = null, mastervolume = null
+function play() {
+	stop()
+	context = new AudioContext()
+	mastervolume = context.createGain()
+	mastervolume.gain.value = 0.6
+	mastervolume.connect(context.destination)
+	let values = document.getElementById("compo").value.replace(/,/g, " ").match(/\S+/g) || []
+	for (let j = 0 ; j < values.length - 2 ; j += 3) {
+		playnote(values[j], +values[j+1], +values[j+2])
+	}
+}
+
+function stop() {
+	if (context) {
+		context.close()
+		context = null
+	}
+}
+
+
+function playnote(notename, on, duration) {
+	let tone = notenames[notename]
+	let node = context.createOscillator()
+	let gain = context.createGain()
+	let start = on * 60 / tempo
+	let dt = duration * 60 / tempo
+	gain.gain.setValueAtTime(1, start)
+	gain.gain.linearRampToValueAtTime(0.5, start + dt)
+	gain.gain.value = 0
+	node.type = wavetype
+	node.frequency.value = 261.6
+	node.detune.value = (tone - 60) * 100
+	gain.connect(mastervolume)
+	node.connect(gain)
+	node.start(start)
+	node.stop(start + dt)
+}
+window.setInterval(function () {
+	let value = ""
+	if (context) {
+		let beat = context.currentTime * tempo / 60
+		let measure = Math.floor(beat / tsnum) + 1
+		value = "measure: " + measure + ", beat: " + beat.toFixed(1)
+	}
+	document.getElementById("current").value = value
+}, 10)
+
+let qobj = {}
+let query = window.location.search.replace(/^\?/, '')
+query.split("&").forEach(param => {
+	if (!param.length) return
+	if (!param.includes("=")) throw "Unparseable param in query string: " + param
+	let parts = param.split("=")
+	qobj[parts[0]] = parts[1]
+})
+
+if (qobj.tempo) {
+	tempo = +qobj.tempo
+}
+if (qobj.tsnum) {
+	tempo = +qobj.tsnum
+}
+if (qobj.wavetype) {
+	wavetype = qobj.wavetype
+}
+if (qobj.s) {
+//	document.getElementById("compo").value = totext(qobj.s)
+}
+</script>
